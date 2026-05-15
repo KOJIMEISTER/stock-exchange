@@ -1,7 +1,9 @@
 package matching
 
 import (
+	"cmp"
 	"log"
+	"slices"
 	"time"
 )
 
@@ -9,14 +11,23 @@ type OrderType int
 
 const (
 	TypeUnknow OrderType = iota
-	TypeBuy
-	TypeSell
+	Market
+	Limit
+)
+
+type OrderSide int
+
+const (
+	SideUknow OrderSide = iota
+	Buy
+	Sell
 )
 
 type Order struct {
 	Id        int
 	Timestamp time.Time
 	OrderType OrderType
+	OrderSide OrderSide
 	Ammount   int
 	Price     int
 }
@@ -31,22 +42,26 @@ type MatchingEngine struct {
 }
 
 func NewMatchingEngine() *MatchingEngine {
-	return &MatchingEngine{orderBook{make([]Order, 20), make([]Order, 20)}}
+	return &MatchingEngine{orderBook{make([]Order, 0, 20), make([]Order, 0, 20)}}
 }
 
 func (this *MatchingEngine) PlaceOrder(order Order) error {
-	switch order.OrderType {
-	case TypeBuy:
+	switch order.OrderSide {
+	case Buy:
 		{
 			this.orders.Asks = append(this.orders.Asks, order)
+			slices.SortFunc(this.orders.Asks, func(left, right Order) int {
+				return cmp.Or(cmp.Compare(left.Price, right.Price), left.Timestamp.Compare(right.Timestamp))
+			})
 			log.Printf("Order id %d placed at asks", order.Id)
-			break
 		}
-	case TypeSell:
+	case Sell:
 		{
 			this.orders.Bids = append(this.orders.Bids, order)
+			slices.SortFunc(this.orders.Bids, func(right, left Order) int {
+				return cmp.Or(cmp.Compare(left.Price, right.Price), right.Timestamp.Compare(left.Timestamp))
+			})
 			log.Printf("Order id %d placed at bids", order.Id)
-			break
 		}
 	default:
 	}

@@ -22,7 +22,35 @@ func main() {
 	matchingEngine.PlaceOrder(matching.Order{
 		Id:        0,
 		Timestamp: time.Now(),
-		OrderType: matching.TypeBuy,
+		OrderType: matching.Limit,
+		OrderSide: matching.Buy,
+		Ammount:   10,
+		Price:     100,
+	})
+
+	matchingEngine.PlaceOrder(matching.Order{
+		Id:        0,
+		Timestamp: time.Now(),
+		OrderType: matching.Limit,
+		OrderSide: matching.Buy,
+		Ammount:   10,
+		Price:     105,
+	})
+
+	matchingEngine.PlaceOrder(matching.Order{
+		Id:        0,
+		Timestamp: time.Now(),
+		OrderType: matching.Limit,
+		OrderSide: matching.Buy,
+		Ammount:   10,
+		Price:     95,
+	})
+
+	matchingEngine.PlaceOrder(matching.Order{
+		Id:        1,
+		Timestamp: time.Now(),
+		OrderType: matching.Market,
+		OrderSide: matching.Sell,
 		Ammount:   10,
 		Price:     100,
 	})
@@ -30,9 +58,19 @@ func main() {
 	matchingEngine.PlaceOrder(matching.Order{
 		Id:        1,
 		Timestamp: time.Now(),
-		OrderType: matching.TypeSell,
+		OrderType: matching.Market,
+		OrderSide: matching.Sell,
 		Ammount:   10,
-		Price:     100,
+		Price:     105,
+	})
+
+	matchingEngine.PlaceOrder(matching.Order{
+		Id:        1,
+		Timestamp: time.Now(),
+		OrderType: matching.Market,
+		OrderSide: matching.Sell,
+		Ammount:   10,
+		Price:     95,
 	})
 
 	<-ctx.Done()
