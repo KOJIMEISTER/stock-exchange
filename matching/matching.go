@@ -91,7 +91,7 @@ func (this *MatchingEngine) executeMarketSell(order *Order) (int, error) {
 			curAmm = 0
 		} else {
 			log.Printf("Order id %d finished, order side %s", this.orders.Asks[0].Id, this.orders.Asks[0].OrderSide.toString())
-			sum = sum + curAmm*this.orders.Asks[0].Price
+			sum = sum + this.orders.Asks[0].Ammount*this.orders.Asks[0].Price
 			curAmm = curAmm - this.orders.Asks[0].Ammount
 			this.orders.Asks = this.orders.Asks[1:]
 		}
@@ -119,7 +119,7 @@ func (this *MatchingEngine) executeMarketBuy(order *Order) (int, error) {
 			curAmm = 0
 		} else {
 			log.Printf("Order id %d finished, order side %s", this.orders.Bids[0].Id, this.orders.Bids[0].OrderSide.toString())
-			sum = sum + curAmm*this.orders.Bids[0].Price
+			sum = sum + this.orders.Bids[0].Ammount*this.orders.Bids[0].Price
 			curAmm = curAmm - this.orders.Bids[0].Ammount
 			this.orders.Bids = this.orders.Bids[1:]
 		}
@@ -170,13 +170,13 @@ func (this *MatchingEngine) executeBuy(order *Order) (int, error) {
 	}
 }
 
-func (this *MatchingEngine) PlaceOrder(order Order) error {
+func (this *MatchingEngine) PlaceOrder(order Order) (int, error) {
 	switch order.OrderSide {
 	case Buy:
-		this.executeBuy(&order)
+		return this.executeBuy(&order)
 	case Sell:
-		this.executeSell(&order)
+		return this.executeSell(&order)
 	default:
 	}
-	return nil
+	return 0, nil
 }
