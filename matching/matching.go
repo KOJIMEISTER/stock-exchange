@@ -78,26 +78,26 @@ func (this *MatchingEngine) executeMarketSell(order *Order) (int, error) {
 	sum := 0
 	curAmm := order.Ammount
 	for len(this.orders.Asks) != 0 && curAmm != 0 {
-		if curAmm-this.orders.Asks[0].Ammount < 0 {
+
+		curOrder := &this.orders.Asks[0]
+
+		if curAmm-curOrder.Ammount < 0 {
 			log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
-			sum = sum + curAmm*this.orders.Asks[0].Price
-			this.orders.Asks[0].Ammount = this.orders.Asks[0].Ammount - curAmm
+			sum = sum + curAmm*curOrder.Price
+			curOrder.Ammount = curOrder.Ammount - curAmm
 			curAmm = 0
-		} else if curAmm-this.orders.Asks[0].Ammount == 0 {
+		} else if curAmm-curOrder.Ammount == 0 {
 			log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
-			log.Printf("Order id %d finished, order side %s", this.orders.Asks[0].Id, this.orders.Asks[0].OrderSide.toString())
-			sum = sum + curAmm*this.orders.Asks[0].Price
+			log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+			sum = sum + curAmm*curOrder.Price
 			this.orders.Asks = this.orders.Asks[1:]
 			curAmm = 0
 		} else {
-			log.Printf("Order id %d finished, order side %s", this.orders.Asks[0].Id, this.orders.Asks[0].OrderSide.toString())
-			sum = sum + this.orders.Asks[0].Ammount*this.orders.Asks[0].Price
-			curAmm = curAmm - this.orders.Asks[0].Ammount
+			log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+			sum = sum + curOrder.Ammount*curOrder.Price
+			curAmm = curAmm - curOrder.Ammount
 			this.orders.Asks = this.orders.Asks[1:]
 		}
-	}
-	if curAmm != 0 {
-		this.placeBid(order)
 	}
 	return sum, nil
 }
@@ -106,26 +106,26 @@ func (this *MatchingEngine) executeMarketBuy(order *Order) (int, error) {
 	sum := 0
 	curAmm := order.Ammount
 	for len(this.orders.Bids) != 0 && curAmm != 0 {
-		if curAmm-this.orders.Bids[0].Ammount < 0 {
+
+		curOrder := &this.orders.Bids[0]
+
+		if curAmm-curOrder.Ammount < 0 {
 			log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
-			sum = sum + curAmm*this.orders.Bids[0].Price
-			this.orders.Bids[0].Ammount = this.orders.Bids[0].Ammount - curAmm
+			sum = sum + curAmm*curOrder.Price
+			curOrder.Ammount = curOrder.Ammount - curAmm
 			curAmm = 0
-		} else if curAmm-this.orders.Bids[0].Ammount == 0 {
+		} else if curAmm-curOrder.Ammount == 0 {
 			log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
-			log.Printf("Order id %d finished, order side %s", this.orders.Bids[0].Id, this.orders.Bids[0].OrderSide.toString())
-			sum = sum + curAmm*this.orders.Bids[0].Price
+			log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+			sum = sum + curAmm*curOrder.Price
 			this.orders.Bids = this.orders.Bids[1:]
 			curAmm = 0
 		} else {
-			log.Printf("Order id %d finished, order side %s", this.orders.Bids[0].Id, this.orders.Bids[0].OrderSide.toString())
-			sum = sum + this.orders.Bids[0].Ammount*this.orders.Bids[0].Price
-			curAmm = curAmm - this.orders.Bids[0].Ammount
+			log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+			sum = sum + curOrder.Ammount*curOrder.Price
+			curAmm = curAmm - curOrder.Ammount
 			this.orders.Bids = this.orders.Bids[1:]
 		}
-	}
-	if curAmm != 0 {
-		this.placeAsk(order)
 	}
 	return sum, nil
 }
@@ -133,6 +133,33 @@ func (this *MatchingEngine) executeMarketBuy(order *Order) (int, error) {
 func (this *MatchingEngine) executeLimitSell(order *Order) (int, error) {
 	sum := 0
 	curAmm := order.Ammount
+
+	for i := 0; i < len(this.orders.Asks) && curAmm != 0; i++ {
+		if this.orders.Asks[i].Price >= order.Price {
+
+			curOrder := &this.orders.Asks[i]
+
+			if curAmm-curOrder.Ammount < 0 {
+				log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
+				curOrder.Ammount = curOrder.Ammount - curAmm
+				sum = sum + curAmm*curOrder.Price
+				curAmm = 0
+			} else if curAmm-curOrder.Ammount == 0 {
+				log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
+				log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+				sum = sum + curAmm*curOrder.Price
+				this.orders.Asks = append(this.orders.Asks[:i], this.orders.Asks[i+1:]...)
+				curAmm = 0
+			} else {
+				log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+				sum = sum + curOrder.Ammount*curOrder.Price
+				curAmm = curAmm - curOrder.Ammount
+				this.orders.Asks = append(this.orders.Asks[:i], this.orders.Asks[i+1:]...)
+				i = i - 1
+			}
+		}
+	}
+
 	if curAmm != 0 {
 		this.placeBid(order)
 	}
@@ -142,6 +169,33 @@ func (this *MatchingEngine) executeLimitSell(order *Order) (int, error) {
 func (this *MatchingEngine) executeLimitBuy(order *Order) (int, error) {
 	sum := 0
 	curAmm := order.Ammount
+
+	for i := 0; i < len(this.orders.Bids) && curAmm != 0; i++ {
+		if this.orders.Bids[i].Price <= order.Price {
+
+			curOrder := &this.orders.Bids[i]
+
+			if curAmm-curOrder.Ammount < 0 {
+				log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
+				curOrder.Ammount = curOrder.Ammount - curAmm
+				sum = sum + curAmm*curOrder.Price
+				curAmm = 0
+			} else if curAmm-curOrder.Ammount == 0 {
+				log.Printf("Order id %d finished, order side %s", order.Id, order.OrderSide.toString())
+				log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+				sum = sum + curAmm*curOrder.Price
+				this.orders.Bids = append(this.orders.Bids[:i], this.orders.Bids[i+1:]...)
+				curAmm = 0
+			} else {
+				log.Printf("Order id %d finished, order side %s", curOrder.Id, curOrder.OrderSide.toString())
+				sum = sum + curOrder.Ammount*curOrder.Price
+				this.orders.Bids = append(this.orders.Bids[:i], this.orders.Bids[i+1:]...)
+				curAmm = curAmm - curOrder.Ammount
+				i = i - 1
+			}
+		}
+	}
+
 	if curAmm != 0 {
 		this.placeAsk(order)
 	}
